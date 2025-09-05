@@ -27,7 +27,6 @@ app.post('/chat', async (req, res) => {
         const result = await model.generateContent({
             contents: [
                 { role: "user", parts: [{ text: systemInstruction }] },
-                { role: "model", parts: [{ text: "What's up?" }] },
                 { role: "user", parts: [{ text: userMessage }] }
             ]
         });
