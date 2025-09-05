@@ -27,31 +27,15 @@ app.post('/chat', async (req, res) => {
     }
 
     try {
-        let result;
-        const maxRetries = 3;
-        let retryCount = 0;
-
-        while (!result && retryCount < maxRetries) {
-            try {
-                result = await hf.textGeneration({
-                    model: HF_MODEL,
-                    inputs: systemInstruction + "\n\nUser: " + userMessage,
-                    parameters: {
-                        max_new_tokens: 150,
-                        temperature: 0.8,
-                        do_sample: true
-                    }
-                });
-            } catch (err) {
-                console.error(`Attempt ${retryCount + 1} failed:`, err.message);
-                retryCount++;
-                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retrying
+        const result = await hf.textGeneration({
+            model: HF_MODEL,
+            inputs: systemInstruction + "\n\nUser: " + userMessage,
+            parameters: {
+                max_new_tokens: 150,
+                temperature: 0.8,
+                do_sample: true
             }
-        }
-
-        if (!result) {
-            throw new Error('Failed to get a response from Hugging Face after multiple retries.');
-        }
+        });
         
         const responseText = result.generated_text;
 
