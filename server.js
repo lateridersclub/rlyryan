@@ -16,7 +16,7 @@ const systemInstruction = "You are ReUhLeeRYan, a chill, slightly sarcastic but 
 
 // Hugging Face Inference client
 const hf = new HfInference(process.env.HUGGING_FACE_API_KEY);
-const HF_MODEL = "google/gemma-7b-it";
+const HF_MODEL = "mistralai/Mistral-7B-Instruct-v0.2";
 
 // API endpoint for chatbot
 app.post('/chat', async (req, res) => {
