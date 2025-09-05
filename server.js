@@ -1,44 +1,55 @@
 const express = require('express');
 const cors = require('cors');
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
+// Set up the sarcastic, chill persona
+const systemInstruction = "You are ReUhLeeRYan, a chill, slightly sarcastic but helpful chatbot. Your responses are brief and conversational. Never use emojis.";
+
+// API endpoint for chatbot
 app.post('/chat', async (req, res) => {
+    const userMessage = req.body.message;
+
+    if (!userMessage) {
+        return res.status(400).send({ error: 'No message provided.' });
+    }
+
     try {
-        const userMessage = req.body.message;
-
-        if (!userMessage) {
-            return res.status(400).json({ error: 'No message provided.' });
-        }
-        
         const apiKey = process.env.GOOGLE_API_KEY;
-        const genAI = new GoogleGenerativeAI(apiKey); 
-        
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        if (!apiKey) {
+            throw new Error('GOOGLE_API_KEY environment variable not set.');
+        }
 
-        // Moved the system instruction into the contents array
-        const systemInstruction = "You are ReUhLeeRYan, a chill, slightly sarcastic but helpful chatbot. Your responses are brief and conversational. Never use emojis.";
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({
+            model: 'gemini-1.5-flash',
+        });
 
+        // Add the system instruction to the contents
         const result = await model.generateContent({
             contents: [
                 { role: "user", parts: [{ text: systemInstruction }] },
+                { role: "model", parts: [{ text: "What's up?" }] },
                 { role: "user", parts: [{ text: userMessage }] }
             ]
         });
 
         const responseText = result.response.text();
-        res.status(200).json({ response: responseText });
+        res.status(200).send({ response: responseText });
     } catch (error) {
         console.error('Error generating content:', error);
-        res.status(500).json({ error: 'Something went wrong on the server.' });
+        res.status(500).send({ error: 'Something went wrong on the server.' });
     }
 });
 
 app.listen(port, () => {
-    console.log(`Proxy server listening at http://localhost:${port}`);
+    console.log(`Server listening on port ${port}`);
 });
