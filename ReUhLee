@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .animated-emoji-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🤖💬✨🚀</text></svg>');
+            background-repeat: repeat;
+            background-size: 200px;
+            opacity: 0.04;
+            animation: emoji-float 60s linear infinite;
+        }
+
+        @keyframes emoji-float {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(15%, -10%) rotate(5deg); }
+            50% { transform: translate(30%, 5%) rotate(0deg); }
+            75% { transform: translate(10%, 15%) rotate(-5deg); }
+            100% { transform: translate(0, 0) rotate(0deg); }
+        }
+
+        .glass-container {
+            position: absolute;
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            resize: both;
+            overflow: hidden;
+            min-width: 350px;
+            min-height: 400px;
+        }
+
+        .glass-header {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            cursor: move;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+        }
+
+        .header-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: #fff;
+            flex-grow: 1;
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .header-button {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: rgba(255, 255, 255, 0.8);
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .header-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+        }
+
+        .header-button.close {
+            background: #ff4d4d;
+            border-color: #ff4d4d;
+            color: #fff;
+        }
+        .header-button.close:hover {
+            background: #e60000;
+            border-color: #e60000;
+        }
+
+        .chat-window {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 0.9em;
+            scrollbar-width: thin;
+            scrollbar-color: #4a4a4a #2b2b2b;
+        }
+
+        .chat-window::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-window::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        .chat-window::-webkit-scrollbar-thumb {
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .message {
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            color: #90ee90;
+        }
+
+        .bot-message {
+            color: #87ceeb;
+        }
+
+        .info-message {
+            color: #aaaaaa;
+            font-style: italic;
+        }
+
+        .timestamp {
+            color: #888;
+            margin-right: 8px;
+        }
+
+        .irc-input-container {
+            display: flex;
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .irc-input {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            outline: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9em;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .irc-input:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #fff;
+        }
+
+        .irc-send-btn {
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            padding: 12px 20px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9em;
+            border-radius: 8px;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .irc-send-btn:hover {
+            background-color: #45a049;
+        }
+
+        .irc-send-btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        .loading-dots {
+            display: inline-block;
+            animation: blink 1s steps(5, start) infinite;
+        }
+
+        @keyframes blink {
+            to {
+                visibility: hidden;
+            }
+        }
+
+        .os-taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            padding: 8px 15px;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+        .taskbar-start-button {
+            font-size: 1.5em;
+            text-decoration: none;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out;
+        }
+        
+        .taskbar-start-button:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="animated-emoji-bg"></div>
+
+<div class="glass-container" id="glass-container">
+    <div class="glass-header" id="glass-header">
+        <div class="header-buttons">
+            <button class="header-button fullscreen-btn" id="fullscreen-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                    <path d="M1.5 1a.5.5 0 0 0-.5.5v13a.5.5 0 0 0 .5.5h13a.5.5 0 0 0 .5-.5v-13a.5.5 0 0 0-.5-.5h-13zm0 1h13v12h-13V2z"/>
+                </svg>
+            </button>
+            <button class="header-button close" id="close-btn">X</button>
+        </div>
+        <span class="header-title" id="window-title"></span>
+    </div>
+    <div class="chat-window" id="chat-window">
+        <div class="message info-message"><span class="timestamp">[00:00]</span> Connecting...</div>
+        <div class="message info-message"><span class="timestamp">[00:00]</span> <span style="font-weight: bold; color: #ff6347;">ReUhLeeRYan</span> is online.</div>
+        <div class="message bot-message"><span class="timestamp">[00:00]</span> &lt;ReUhLeeRYan&gt; What's up?</div>
+    </div>
+    <div class="irc-input-container">
+        <input type="text" id="user-input" class="irc-input" placeholder="Type your message here..." autofocus>
+        <button id="send-btn" class="irc-send-btn">Send</button>
+    </div>
+</div>
+
+<div class="os-taskbar">
+    <a href="https://www.talktoryan.lol" class="taskbar-start-button" title="Back to Ryan's site">
+        🏠
+    </a>
+</div>
+
+<script type="text/javascript">
+    var __app_id = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    var __firebase_config = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+
+    const chatWindow = document.getElementById('chat-window');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const glassContainer = document.getElementById('glass-container');
+    const glassHeader = document.getElementById('glass-header');
+    const closeBtn = document.getElementById('close-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const windowTitle = document.getElementById('window-title');
+
+    let isWaitingForResponse = false;
+    let apiKey = '';
+    let isDragging = false;
+    let offsetX, offsetY;
+
+    function updateClock() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        windowTitle.textContent = `${timeString} - ReUhLeeRYan Says...`;
+    }
+
+    function getCurrentTimestamp() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `[${hours}:${minutes}]`;
+    }
+
+    function addMessage(message, className, username) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${className}`;
+        const timestamp = getCurrentTimestamp();
+        let formattedMessage = `${timestamp} <${username}> ${message}`;
+
+        if (className === 'info-message') {
+            formattedMessage = `${timestamp} ${message}`;
+        }
+        
+        messageDiv.innerHTML = formattedMessage;
+        chatWindow.appendChild(messageDiv);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    async function sendMessage() {
+        const userMessage = userInput.value.trim();
+        if (userMessage === '' || isWaitingForResponse) {
+            return;
+        }
+
+        isWaitingForResponse = true;
+        sendBtn.disabled = true;
+        userInput.disabled = true;
+
+        addMessage(userMessage, 'user-message', 'You');
+        userInput.value = '';
+
+        const loadingMessage = document.createElement('div');
+        loadingMessage.className = 'message bot-message';
+        loadingMessage.innerHTML = `${getCurrentTimestamp()} &lt;ReUhLeeRYan&gt; Thinking<span class="loading-dots">...</span>`;
+        chatWindow.appendChild(loadingMessage);
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        try {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userMessage }] }],
+                tools: [{ "google_search": {} }],
+                systemInstruction: {
+                    parts: [{ text: "You are an AI chatbot named ReUhLeeRYan. You are generally chill and laid-back, but occasionally sprinkle in a sarcastic remark. Your responses should be concise, and you should always answer the core question. Use a casual, modern tone and avoid being overly formal. Do not use emojis. For a greeting, respond with a casual greeting like 'What's up?'" }]
+                }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                console.error('API call failed:', response.status, response.statusText);
+                const errorData = await response.json();
+                console.error('Error details:', errorData);
+                throw new Error(`API returned an error: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            const botResponse = result?.candidates?.[0]?.content?.parts?.[0]?.text || "Couldn't come up with anything. I guess you're just that boring.";
+            loadingMessage.remove();
+            addMessage(botResponse, 'bot-message', 'ReUhLeeRYan');
+
+        } catch (error) {
+            console.error('API call failed:', error);
+            loadingMessage.remove();
+            addMessage(`Whoops, that request failed. Looks like I'm having a bad day. Check the console if you're curious.`, 'info-message', 'System');
+        } finally {
+            isWaitingForResponse = false;
+            sendBtn.disabled = false;
+            userInput.disabled = false;
+            userInput.focus();
+        }
+    }
+
+    userInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter') {
+            sendMessage();
+        }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    // Draggable functionality
+    glassHeader.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        offsetX = e.clientX - glassContainer.getBoundingClientRect().left;
+        offsetY = e.clientY - glassContainer.getBoundingClientRect().top;
+        glassHeader.style.cursor = 'grabbing';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const x = e.clientX - offsetX;
+        const y = e.clientY - offsetY;
+        glassContainer.style.left = `${x}px`;
+        glassContainer.style.top = `${y}px`;
+    });
+
+    document.addEventListener('mouseup', () => {
+        isDragging = false;
+        glassHeader.style.cursor = 'move';
+    });
+
+    // Close button
+    closeBtn.addEventListener('click', () => {
+        glassContainer.style.display = 'none';
+    });
+
+    // Fullscreen button
+    fullscreenBtn.addEventListener('click', () => {
+        if (glassContainer.style.width === '100%') {
+            glassContainer.style.width = '600px';
+            glassContainer.style.height = '80vh';
+            glassContainer.style.top = '50%';
+            glassContainer.style.left = '50%';
+            glassContainer.style.transform = 'translate(-50%, -50%)';
+            glassContainer.style.resize = 'both';
+        } else {
+            glassContainer.style.width = '100%';
+            glassContainer.style.height = '100%';
+            glassContainer.style.top = '0';
+            glassContainer.style.left = '0';
+            glassContainer.style.transform = 'none';
+            glassContainer.style.resize = 'none';
+        }
+    });
+
+    window.onload = function() {
+        userInput.focus();
+        updateClock();
+        setInterval(updateClock, 1000);
+    };
+</script>
+
+</body>
+</html>
