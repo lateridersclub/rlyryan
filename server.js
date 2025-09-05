@@ -16,22 +16,20 @@ app.post('/chat', async (req, res) => {
             return res.status(400).json({ error: 'No message provided.' });
         }
         
-        // This is where the code securely retrieves the API key.
         const apiKey = process.env.GOOGLE_API_KEY;
         const genAI = new GoogleGenerativeAI(apiKey); 
         
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+        // Moved the system instruction into the contents array
         const systemInstruction = "You are ReUhLeeRYan, a chill, slightly sarcastic but helpful chatbot. Your responses are brief and conversational. Never use emojis.";
 
         const result = await model.generateContent({
-            contents: [{
-                role: "user",
-                parts: [{ text: userMessage }]
-            }],
-            systemInstruction: {
-                parts: [{ text: systemInstruction }]
-            }
+            contents: [
+                { role: "user", parts: [{ text: systemInstruction }] },
+                { role: "model", parts: [{ text: "What's up?" }] },
+                { role: "user", parts: [{ text: userMessage }] }
+            ]
         });
 
         const responseText = result.response.text();
