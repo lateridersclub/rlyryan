@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { HfInference } = require('@huggingface/inference');
 
 dotenv.config();
 
@@ -14,6 +14,10 @@ app.use(cors());
 // Set up the sarcastic, chill persona
 const systemInstruction = "You are ReUhLeeRYan, a chill, slightly sarcastic but helpful chatbot. Your responses are brief and conversational. Never use emojis.";
 
+// Hugging Face Inference client
+const hf = new HfInference(process.env.HUGGING_FACE_API_KEY);
+const HF_MODEL = "google/gemma-7b-it";
+
 // API endpoint for chatbot
 app.post('/chat', async (req, res) => {
     const userMessage = req.body.message;
@@ -23,33 +27,25 @@ app.post('/chat', async (req, res) => {
     }
 
     try {
-        const apiKey = process.env.GOOGLE_API_KEY;
-        if (!apiKey) {
-            throw new Error('GOOGLE_API_KEY environment variable not set.');
-        }
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-            model: 'gemini-1.5-flash',
+        const result = await hf.textGeneration({
+            model: HF_MODEL,
+            inputs: systemInstruction + "\n\nUser: " + userMessage,
+            parameters: {
+                max_new_tokens: 150,
+                temperature: 0.8,
+                do_sample: true
+            }
         });
+        
+        const responseText = result.generated_text;
 
-        const result = await model.generateContent({
-            contents: [
-                { role: "user", parts: [{ text: systemInstruction }] },
-                { role: "model", parts: [{ text: "What's up?" }] },
-                { role: "user", parts: [{ text: userMessage }] }
-            ]
-        });
+        // Clean up the response to remove the system prompt
+        const cleanedResponse = responseText.replace(systemInstruction, '').trim();
 
-        const responseText = result.response.text();
-        res.status(200).send({ response: responseText });
+        res.status(200).send({ response: cleanedResponse });
     } catch (error) {
         console.error('Error generating content:', error);
-        if (error.response && error.response.status === 429) {
-            res.status(429).send({ error: 'Too Many Requests: Your API quota has been exceeded. Please try again tomorrow.' });
-        } else {
-            res.status(500).send({ error: 'Something went wrong on the server.' });
-        }
+        res.status(500).send({ error: 'Something went wrong on the server.' });
     }
 });
 
