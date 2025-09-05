@@ -16,9 +16,9 @@ app.post('/chat', async (req, res) => {
             return res.status(400).json({ error: 'No message provided.' });
         }
         
-        // This is where you MUST paste your personal Google API key.
-        // Get one for free at https://aistudio.google.com/
-        const genAI = new GoogleGenerativeAI("AIzaSyAnZImguHcqw3ULSO3FDYjbtphB_mllKUw"); 
+        // This is where the code securely retrieves the API key.
+        const apiKey = process.env.GOOGLE_API_KEY;
+        const genAI = new GoogleGenerativeAI(apiKey); 
         
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
