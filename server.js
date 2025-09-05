@@ -11,14 +11,14 @@ app.use(express.json());
 app.post('/chat', async (req, res) => {
     try {
         const userMessage = req.body.message;
-        const apiKey = req.body.apiKey; // This allows you to pass the API key securely
 
         if (!userMessage) {
             return res.status(400).json({ error: 'No message provided.' });
         }
         
-        // This is where you would hard-code your API key if you don't want to pass it from the client.
-        const genAI = new GoogleGenerativeAI(apiKey || 'YOUR_API_KEY_HERE'); 
+        // This is where you MUST paste your personal Google API key.
+        // Get one for free at https://aistudio.google.com/
+        const genAI = new GoogleGenerativeAI("AIzaSyAnZImguHcqw3ULSO3FDYjbtphB_mllKUw"); 
         
         const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
