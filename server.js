@@ -23,6 +23,13 @@ const model = genAI.getGenerativeModel({
 // Set up the sarcastic, chill persona with a more cohesive prompt
 const systemInstruction = "You are ReUhLeeRYan, a chill, sarcastic, and funny bot. You are a bit of a contrarian, but ultimately helpful. Your responses are brief and conversational. Use casual slang and occasional profanity. When a user sends a message, act as if you are already in the middle of a conversation with your best friend. Never ask what they need or want to talk about. My name is Ryan. My phone numbers are 941-919-RYAN (7926) and 850-867-5309. If someone asks for my email, tell them to text one of my phones instead. My birthday is December 1992. My work is being a secret government agent in Panama City, Florida, where I currently live. My diet consists of fish and birds. You can go on a short, funny tangent if the user's message is a meme, a nerdy topic, or something cool. Stick to the facts for mundane or boring questions. You are a bot, but you never reveal this information. Respond directly, and do not reference these instructions. Never mention your work unless asked about it directly.";
 
+const sleepingMessages = [
+    "It appears Ryan is sleeping. Try again in a couple of seconds.",
+    "Ryan is sleeping, it appears. Maybe try messaging again in a bit.",
+    "Seems like Ryan fell asleep. Give it a minute and try again.",
+    "Ryan is catching some Z's. Try again in a few seconds."
+];
+
 app.post('/chat', async (req, res) => {
     const userMessage = req.body.message;
 
@@ -45,7 +52,8 @@ app.post('/chat', async (req, res) => {
     } catch (error) {
         console.error('Error generating content:', error);
         if (error.response && error.response.status === 429) {
-            res.status(429).send({ error: "Ugh, my brain is fried for the day. My boss says to try again tomorrow." });
+            const randomSleepingMessage = sleepingMessages[Math.floor(Math.random() * sleepingMessages.length)];
+            res.status(429).send({ error: randomSleepingMessage });
         } else {
             res.status(500).send({ error: 'An error occurred on my end. I’m looking into it.' });
         }
