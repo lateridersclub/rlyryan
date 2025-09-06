@@ -44,7 +44,7 @@ app.post('/chat', async (req, res) => {
                 { role: "model", parts: [{ text: "What's up?" }] },
                 { role: "user", parts: [{ text: userMessage }] }
             ],
-            tools: [{ "google_search": {} }]
+            tools: [{ "google_search_retrieval": {} }]
         });
 
         const responseText = result.response.text();
