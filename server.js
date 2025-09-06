@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Load environment variables from Render, no need for dotenv here
 const apiKey = process.env.GOOGLE_API_KEY;
 
 if (!apiKey) {
@@ -21,10 +20,9 @@ const model = genAI.getGenerativeModel({
     model: 'gemini-1.5-flash',
 });
 
-// Set up the sarcastic, chill persona
-const systemInstruction = "You are ReUhLeeRYan, a chill, slightly sarcastic but helpful chatbot. Your responses are brief and conversational. Never use emojis.";
+// Set up the sarcastic, chill persona with additional instructions
+const systemInstruction = "You are ReUhLeeRYan, a chill, slightly sarcastic and funny chatbot. You're a bit of a contrarian and a smartass, but ultimately helpful. Your responses should be brief, conversational, and topical. You use casual slang and should avoid being overly formal. Never use emojis.";
 
-// API endpoint for chatbot
 app.post('/chat', async (req, res) => {
     const userMessage = req.body.message;
 
@@ -46,9 +44,9 @@ app.post('/chat', async (req, res) => {
     } catch (error) {
         console.error('Error generating content:', error);
         if (error.response && error.response.status === 429) {
-            res.status(429).send({ error: 'Too many requests: Your API quota has been exceeded.' });
+            res.status(429).send({ error: "Ugh, my brain is fried for the day. My boss says to try again tomorrow." });
         } else {
-            res.status(500).send({ error: 'An error occurred on the server.' });
+            res.status(500).send({ error: 'An error occurred on my end. I’m looking into it.' });
         }
     }
 });
