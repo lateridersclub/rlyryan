@@ -64,6 +64,14 @@ app.post('/chat', async (req, res) => {
     }
 });
 
+app.post('/clear-history', (req, res) => {
+    const sessionId = req.body.sessionId;
+    if (conversationHistory[sessionId]) {
+        delete conversationHistory[sessionId];
+    }
+    res.status(200).send({ status: 'History cleared' });
+});
+
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
