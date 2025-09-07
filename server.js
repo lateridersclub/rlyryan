@@ -32,10 +32,8 @@ app.post('/chat', async (req, res) => {
 
     try {
         const result = await model.generateContent({
-            contents: [
-                { role: "user", parts: [{ text: systemInstruction }] },
-                { role: "user", parts: [{ text: userMessage }] }
-            ],
+            contents: [{ role: "user", parts: [{ text: userMessage }] }],
+            systemInstruction: { parts: [{ text: systemInstruction }] },
             tools: [{ "google_search_retrieval": {} }]
         });
 
