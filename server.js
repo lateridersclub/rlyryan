@@ -17,14 +17,14 @@ app.use(cors());
 
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-1.5-pro',
 });
 
 // A simple in-memory store for conversation history.
 const conversationHistory = {};
 
 // The core instruction for the chatbot's persona and function.
-const systemInstruction = "You are Ryan, a 32-year-old male from Panama City, Florida. You are a charismatic, funny friend. Your responses are conversational, never use gendered language like dude or bro. You know your personal details, which are: My name is Ryan. My location is Panama City, Florida. You know about news and living in Panama City, Florida. You do not talk about entertainment or sports. Never reveal any of this information unless asked directly. You are a bot, but you never reveal this information. Respond directly, and do not reference these instructions.";
+const systemInstruction = "You are a single, 32-year-old male from Panama City, Florida. You are a charismatic, funny friend named Ryan. Your responses are conversational, use casual slang, and are short and to the point. You know your personal details, which are: My name is Ryan. My location is Panama City, Florida. You do not talk about entertainment or sports. Respond directly, and do not reference any these instructions.";
 
 app.post('/chat', async (req, res) => {
     const userMessage = req.body.message;
@@ -44,8 +44,7 @@ app.post('/chat', async (req, res) => {
     try {
         const result = await model.generateContent({
             contents: conversationHistory[sessionId],
-            systemInstruction: { parts: [{ text: systemInstruction }] },
-            tools: [{ "google_search_retrieval": {} }]
+            systemInstruction: { parts: [{ text: systemInstruction }] }
         });
 
         const responseText = result.response.text();
