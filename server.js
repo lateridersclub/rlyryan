@@ -51,14 +51,28 @@ app.post('/chat', async (req, res) => {
             tools: [{ google_search: {} }] 
         });
 
-        const responseText = result.response.text();
+        const response = result.response;
+        const candidate = response?.candidates?.[0];
+
+        // Safely extract the text from the model's response.
+        if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+            console.error('Invalid or empty response from model:', JSON.stringify(response, null, 2));
+            throw new Error('The model returned an empty or invalid response.');
+        }
+        
+        const responseText = candidate.content.parts.map(part => part.text).join('');
+
+        if (!responseText) {
+             console.error('Model response contained no text:', JSON.stringify(response, null, 2));
+             throw new Error('The model response contained no text.');
+        }
 
         // Add the bot's response to the conversation history
         conversationHistory[sessionId].push({ role: 'model', parts: [{ text: responseText }] });
 
         res.status(200).send({ response: responseText });
     } catch (error) {
-        console.error('Error generating content:', error);
+        console.error('Error in /chat endpoint:', error);
         if (error.response && error.response.status === 429) {
             res.status(429).send({ error: "Ugh, my brain is fried for the day. My boss says to try again tomorrow." });
         } else {
@@ -78,3 +92,4 @@ app.post('/clear-history', (req, res) => {
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
+
