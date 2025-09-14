@@ -48,7 +48,7 @@ app.post('/chat', async (req, res) => {
         const result = await model.generateContent({
             contents: conversationHistory[sessionId],
             systemInstruction: { parts: [{ text: systemInstruction }] },
-            tools: [{ google_search: {} }] 
+            tools: [{ "google_search_retrieval": {} }] 
         });
 
         const response = result.response;
