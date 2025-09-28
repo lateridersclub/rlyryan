@@ -74,12 +74,21 @@ app.post('/chat', async (req, res) => {
         const candidate = response?.candidates?.[0];
 
         // Robust response validation to prevent errors
-        if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0 || !candidate.content.parts[0].text) {
+        if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
             console.error('Invalid or empty response from model:', JSON.stringify(response, null, 2));
             throw new Error('The model returned an empty or invalid response.');
         }
         
-        const responseText = candidate.content.parts.map(part => part.text).join('');
+        // **BUG FIX**: Filter for text parts to avoid errors when the model uses tools.
+        const responseText = candidate.content.parts
+            .filter(part => part.text)
+            .map(part => part.text)
+            .join('');
+
+        if (!responseText) {
+             console.error('No text found in model response parts:', JSON.stringify(candidate.content.parts, null, 2));
+             throw new Error('The model response did not contain any text.');
+        }
 
         sessions[sessionId].history.push({ role: 'model', parts: [{ text: responseText }] });
 
@@ -87,8 +96,7 @@ app.post('/chat', async (req, res) => {
     } catch (error) {
         console.error('Error in /chat endpoint:', error);
         
-        // **BUG FIX**: Remove the user's message from history if the API call fails.
-        // This prevents corrupting the conversation history with consecutive user messages.
+        // Remove the user's message from history if the API call fails to prevent a loop.
         sessions[sessionId].history.pop();
 
         // Updated, less cringe error messages
