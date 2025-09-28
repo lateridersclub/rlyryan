@@ -86,6 +86,11 @@ app.post('/chat', async (req, res) => {
         res.status(200).send({ response: responseText });
     } catch (error) {
         console.error('Error in /chat endpoint:', error);
+        
+        // **BUG FIX**: Remove the user's message from history if the API call fails.
+        // This prevents corrupting the conversation history with consecutive user messages.
+        sessions[sessionId].history.pop();
+
         // Updated, less cringe error messages
         if (error.response && error.response.status === 429) {
             res.status(429).send({ error: "Hold on, my brain's buffering. Give me a second to catch up." });
