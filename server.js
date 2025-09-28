@@ -17,9 +17,9 @@ app.use(express.json());
 app.use(cors());
 
 const genAI = new GoogleGenerativeAI(apiKey);
-// FIX: Updated model name to a valid identifier
+// FIX: Switched to the standard 'gemini-pro' model to resolve the 404 error.
 const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-pro-latest',
+    model: 'gemini-pro',
 });
 
 // A simple in-memory store for conversation history.
@@ -110,4 +110,6 @@ app.post('/clear-history', (req, res) => {
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
+
+
 
