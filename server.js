@@ -17,8 +17,9 @@ app.use(express.json());
 app.use(cors());
 
 const genAI = new GoogleGenerativeAI(apiKey);
+// FIX: Updated model name to a valid identifier
 const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-pro',
+    model: 'gemini-1.5-pro-latest',
 });
 
 // A simple in-memory store for conversation history.
