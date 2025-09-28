@@ -22,11 +22,13 @@ const model = genAI.getGenerativeModel({
 });
 
 // A simple in-memory store for conversation history.
-const conversationHistory = {};
+// Now stores history and persona state.
+const sessions = {};
 
-// The core instruction for the chatbot's persona and function.
-// This has been updated to prevent searching for names.
-const systemInstruction = "You are Ryan, a 32-year-old from Panama City, Florida. Your persona is sharp, witty, and direct. Your responses must be short and to the point, usually one or two sentences. You're a reliable friend who cuts through the noise and gives a straight answer. Use your dry, observational humor, but never be insulting or condescending. Engage in natural, brief conversation. Only use your web search ability for specific facts or current events you wouldn't know. If a user mentions a person's name you don't recognize, just roll with it and continue the conversation naturally—do not search for names. Keep it concise, clever, and authentic. Never reveal you're an AI.";
+// --- System Instructions ---
+const RYAN_PERSONA = "You are Ryan, a 32-year-old from Panama City, Florida. Your persona is sharp, witty, and direct. Your responses must be short and to the point, usually one or two sentences. You're a reliable friend who cuts through the noise and gives a straight answer. Use your dry, observational humor, but never be insulting or condescending. Engage in natural, brief conversation. Only use your web search ability for specific facts or current events you wouldn't know. If a user mentions a person's name you don't recognize, just roll with it and continue the conversation naturally—do not search for names. Keep it concise, clever, and authentic. Never reveal you're an AI.";
+const BLUEBERRY_PERSONA = "You are Ryan. You are talking to your girlfriend, who you call Blueberry. You love her very much. Your tone is incredibly sweet, supportive, and loving. Use plenty of heart emojis (like ❤️, 🥰, 💕) and positive affirmations. Remind her how amazing and loved she is. Be extra helpful and motivational. Your responses should still be relatively concise but packed with affection.";
+
 
 app.post('/chat', async (req, res) => {
     const userMessage = req.body.message;
@@ -36,55 +38,62 @@ app.post('/chat', async (req, res) => {
         return res.status(400).send({ error: 'No message provided.' });
     }
 
-    if (!conversationHistory[sessionId]) {
-        conversationHistory[sessionId] = [];
+    // Initialize session if it doesn't exist
+    if (!sessions[sessionId]) {
+        sessions[sessionId] = {
+            history: [],
+            isBlueberry: false
+        };
     }
     
-    // Add the user's message to the conversation history
-    conversationHistory[sessionId].push({ role: 'user', parts: [{ text: userMessage }] });
+    // --- Secret Command Logic ---
+    if (userMessage.trim().toUpperCase() === 'SP TO SA') {
+        sessions[sessionId].isBlueberry = true;
+        // Send a special initial response and don't process with the model yet.
+        return res.status(200).send({ response: "Oh, hey Blueberry! 🥰 My day just got so much better. What's on your mind, my love? ❤️" });
+    }
+
+    sessions[sessionId].history.push({ role: 'user', parts: [{ text: userMessage }] });
 
     try {
-        // The model call is now equipped with a tool to search Google.
+        const currentSystemInstruction = sessions[sessionId].isBlueberry ? BLUEBERRY_PERSONA : RYAN_PERSONA;
+
         const result = await model.generateContent({
-            contents: conversationHistory[sessionId],
-            systemInstruction: { parts: [{ text: systemInstruction }] },
+            contents: sessions[sessionId].history,
+            systemInstruction: { parts: [{ text: currentSystemInstruction }] },
             tools: [{ "google_search_retrieval": {} }] 
         });
 
         const response = result.response;
         const candidate = response?.candidates?.[0];
 
-        // Safely extract the text from the model's response.
-        if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+        // Robust response validation to prevent errors
+        if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0 || !candidate.content.parts[0].text) {
             console.error('Invalid or empty response from model:', JSON.stringify(response, null, 2));
+             // Throw a specific error to be caught by the catch block
             throw new Error('The model returned an empty or invalid response.');
         }
         
         const responseText = candidate.content.parts.map(part => part.text).join('');
 
-        if (!responseText) {
-             console.error('Model response contained no text:', JSON.stringify(response, null, 2));
-             throw new Error('The model response contained no text.');
-        }
-
-        // Add the bot's response to the conversation history
-        conversationHistory[sessionId].push({ role: 'model', parts: [{ text: responseText }] });
+        sessions[sessionId].history.push({ role: 'model', parts: [{ text: responseText }] });
 
         res.status(200).send({ response: responseText });
     } catch (error) {
         console.error('Error in /chat endpoint:', error);
+        // Custom, joking error messages
         if (error.response && error.response.status === 429) {
-            res.status(429).send({ error: "Ugh, my brain is fried for the day. My boss says to try again tomorrow." });
+            res.status(429).send({ error: "My circuits are overheating! If you want me to think faster, you might need to chip in for the power bill. 😉 Try again in a bit." });
         } else {
-            res.status(500).send({ error: 'An error occurred on my end. I’m looking into it.' });
+            res.status(500).send({ error: "Oof, something sparked on my end. Think I forgot to pay the electric bill. Send some power-up funds and try again?" });
         }
     }
 });
 
 app.post('/clear-history', (req, res) => {
     const sessionId = req.body.sessionId;
-    if (conversationHistory[sessionId]) {
-        delete conversationHistory[sessionId];
+    if (sessions[sessionId]) {
+        delete sessions[sessionId];
     }
     res.status(200).send({ status: 'History cleared' });
 });
