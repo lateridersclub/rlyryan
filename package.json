@@ -1,7 +1,7 @@
 {
-  "name": "rlyryan-chatbot-server",
+  "name": "chatbot-server",
   "version": "1.0.0",
-  "description": "Backend for the RLYRYAN chatbot.",
+  "description": "Server for the chatbot",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
