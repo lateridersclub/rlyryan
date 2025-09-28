@@ -81,12 +81,23 @@ app.post('/chat', async (req, res) => {
         });
 
         const response = result.response;
-        // Use a more robust method to get the text, which handles function calls correctly.
-        const responseText = response.text();
+        const candidate = response?.candidates?.[0];
+
+        // More robust validation to prevent server-side crashes
+        if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
+            console.error('Invalid or empty response structure from model:', JSON.stringify(response, null, 2));
+            throw new Error('The model returned an invalid response structure.');
+        }
+
+        // Safely join all text parts
+        const responseText = candidate.content.parts
+            .filter(part => part.text)
+            .map(part => part.text)
+            .join('');
 
         if (!responseText) {
-            console.error('Invalid or empty response from model:', JSON.stringify(response, null, 2));
-            throw new Error('The model returned an empty or invalid response.');
+            console.error('Empty text content in response from model:', JSON.stringify(response, null, 2));
+            throw new Error('The model returned an empty response.');
         }
         
         sessions[sessionId].history.push({ role: 'model', parts: [{ text: responseText }] });
@@ -119,6 +130,4 @@ app.post('/clear-history', (req, res) => {
 app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
 });
-
-
 
