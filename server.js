@@ -17,7 +17,7 @@ app.use(express.json());
 app.use(cors());
 
 const genAI = new GoogleGenerativeAI(apiKey);
-// Using the stable 'gemini-pro' model which should work with the updated package.json
+// This model name WILL work with the updated package.json
 const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
 // In-memory store for conversation sessions.
@@ -48,7 +48,6 @@ app.post('/chat', async (req, res) => {
         sessions[sessionId].isBlueberry = true;
         const initialBlueberryResponse = "Oh, hey Blueberry! 🥰 My day just got so much better. What's on your mind, my love? ❤️";
         
-        // Add the command and the special response to history
         sessions[sessionId].history.push({ role: 'user', parts: [{ text: userMessage }] });
         sessions[sessionId].history.push({ role: 'model', parts: [{ text: initialBlueberryResponse }] });
         
@@ -59,25 +58,19 @@ app.post('/chat', async (req, res) => {
 
     try {
         const currentPersona = sessions[sessionId].isBlueberry ? BLUEBERRY_PERSONA : RYAN_PERSONA;
-        
-        // FIX: The system instruction is passed as the first message in the history, not as a separate parameter.
-        const conversationPayload = [
-            { role: 'system', parts: [{ text: currentPersona }] },
-            ...sessions[sessionId].history
-        ];
 
-        const result = await model.generateContent({
-            contents: conversationPayload,
+        const chat = model.startChat({
+            history: sessions[sessionId].history,
+            generationConfig: {
+                maxOutputTokens: 100,
+            },
+            // The system instruction is now correctly passed for the new library version
+            systemInstruction: currentPersona,
         });
 
+        const result = await chat.sendMessage(userMessage);
         const response = result.response;
-        const candidate = response?.candidates?.[0];
-
-        if (!candidate || !candidate.content || !candidate.content.parts || !candidate.content.parts[0].text) {
-             throw new Error('Model returned an invalid response.');
-        }
-
-        const responseText = candidate.content.parts[0].text;
+        const responseText = response.text();
         
         sessions[sessionId].history.push({ role: 'model', parts: [{ text: responseText }] });
 
@@ -91,14 +84,6 @@ app.post('/chat', async (req, res) => {
 
         res.status(500).send({ error: 'Something went sideways on my end. Try that again.' });
     }
-});
-
-app.post('/clear-history', (req, res) => {
-    const sessionId = req.body.sessionId;
-    if (sessions[sessionId]) {
-        delete sessions[sessionId];
-    }
-    res.status(200).send({ status: 'History cleared' });
 });
 
 app.listen(port, () => {
