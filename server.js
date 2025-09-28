@@ -16,9 +16,9 @@ app.use(express.json());
 app.use(cors());
 
 const genAI = new GoogleGenerativeAI(apiKey);
-// Using the standard 'gemini-pro' model for maximum reliability.
+// FINAL FIX: Using 'gemini-1.0-pro', a stable and universally available model, to resolve the 404 error.
 const model = genAI.getGenerativeModel({
-    model: 'gemini-pro',
+    model: 'gemini-1.0-pro',
 });
 
 // A simple in-memory store for conversation history.
