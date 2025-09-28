@@ -92,9 +92,9 @@ app.post('/chat', async (req, res) => {
         }
 
         if (error.response && error.response.status === 429) {
-            res.status(429).send({ error: "My brain's buffering. Give me a second." });
+            res.status(429).send({ error: "The internet didn't like whatever you just did." });
         } else {
-            res.status(500).send({ error: "Something on my end just went sideways. Try that again." });
+            res.status(500).send({ error: "Somebody was supposed to pay the electric bill. Try that again." });
         }
     }
 });
