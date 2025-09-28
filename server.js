@@ -71,22 +71,13 @@ app.post('/chat', async (req, res) => {
         });
 
         const response = result.response;
-        const candidate = response?.candidates?.[0];
+        // **BUG FIX**: Use the built-in .text() accessor for a more robust way to get the response.
+        // This correctly handles complex responses, like those including tool calls for web search.
+        const responseText = response.text();
 
         // Robust response validation to prevent errors
-        if (!candidate || !candidate.content || !candidate.content.parts || candidate.content.parts.length === 0) {
-            console.error('Invalid or empty response from model:', JSON.stringify(response, null, 2));
-            throw new Error('The model returned an empty or invalid response.');
-        }
-        
-        // **BUG FIX**: Filter for text parts to avoid errors when the model uses tools.
-        const responseText = candidate.content.parts
-            .filter(part => part.text)
-            .map(part => part.text)
-            .join('');
-
         if (!responseText) {
-             console.error('No text found in model response parts:', JSON.stringify(candidate.content.parts, null, 2));
+             console.error('Invalid or empty response from model:', JSON.stringify(response, null, 2));
              throw new Error('The model response did not contain any text.');
         }
 
@@ -99,11 +90,11 @@ app.post('/chat', async (req, res) => {
         // Remove the user's message from history if the API call fails to prevent a loop.
         sessions[sessionId].history.pop();
 
-        // Updated, less cringe error messages
+        // Updated, more tart error messages
         if (error.response && error.response.status === 429) {
-            res.status(429).send({ error: "Hold on, my brain's buffering. Give me a second to catch up." });
+            res.status(429).send({ error: "Power just went out." });
         } else {
-            res.status(500).send({ error: "Something on my end just went sideways. Try that again." });
+            res.status(500).send({ error: "My ISP did not like whatever you just did." });
         }
     }
 });
